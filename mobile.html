@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>GS盯盘</title>
+<style>
+:root{
+  --bg:#0a0a0f;--card:rgba(20,20,35,0.9);--card2:rgba(30,30,50,0.8);
+  --border:rgba(255,255,255,0.06);--glow:rgba(212,168,83,0.15);
+  --text:#e8e8f0;--sub:#8888aa;--up:#ff4757;--down:#2ed573;--gold:#f0c060;--blue:#5b9bd5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;
+  -webkit-tap-highlight-color:transparent;
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(240,192,96,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 0%, rgba(91,155,213,0.04) 0%, transparent 50%);
+}
+
+/* ── 顶部 ── */
+.topbar{
+  position:sticky;top:0;z-index:99;
+  background:rgba(10,10,15,0.85);backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);padding:0 16px;
+  display:flex;align-items:center;justify-content:space-between;height:50px;
+}
+.topbar .brand{font-size:20px;font-weight:900;letter-spacing:-1px}
+.topbar .brand .gs{background:linear-gradient(135deg,#f0c060,#d4a853);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar .info{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--sub)}
+.topbar .d{width:8px;height:8px;border-radius:50%;background:#2ed573;box-shadow:0 0 8px rgba(46,213,115,0.6)}
+.topbar .d.off{background:#ff4757;box-shadow:0 0 8px rgba(255,71,87,0.6)}
+
+/* ── 指数 ── */
+.idx-strip{
+  display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  padding:12px;gap:8px;background:rgba(20,20,35,0.5);
+  border-bottom:1px solid var(--border);
+}
+.idx-strip::-webkit-scrollbar{display:none}
+.idx-item{
+  flex:0 0 auto;min-width:90px;padding:10px 14px;
+  background:var(--card2);border:1px solid var(--border);border-radius:12px;
+  text-align:center;backdrop-filter:blur(10px);
+}
+.idx-item .l{font-size:10px;color:var(--sub);margin-bottom:4px;letter-spacing:1px}
+.idx-item .p{font-size:16px;font-weight:800;margin-bottom:2px}
+.idx-item .c{font-size:10px;font-weight:600}
+
+/* ── Tab（修复点击） ── */
+.tab-wrap{
+  position:sticky;top:50px;z-index:98;
+  background:rgba(0,0,0,0.6);backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  padding:6px 12px;display:flex;gap:6px;
+}
+.tab-btn{
+  flex:1;padding:10px 0;font-size:14px;font-weight:700;
+  color:var(--sub);background:transparent;border:none;
+  border-radius:10px;cursor:pointer;text-align:center;
+  transition:all 0.2s;position:relative;z-index:1;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;-webkit-user-select:none;
+}
+.tab-btn:active{background:rgba(255,255,255,0.05)}
+.tab-btn.on{
+  color:var(--gold);background:rgba(240,192,96,0.1);
+  box-shadow:0 0 20px rgba(240,192,96,0.1);
+}
+
+/* ── 行情卡片 ── */
+.qc{
+  margin:10px 12px;border-radius:14px;
+  background:var(--card);border:1px solid var(--border);
+  overflow:hidden;position:relative;
+  backdrop-filter:blur(10px);
+}
+.qc::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(240,192,96,0.3),transparent);
+}
+.qc-main{display:flex;align-items:center;padding:16px}
+.qc-main .L{flex:1;min-width:0}
+.qc-main .N{font-size:17px;font-weight:800;line-height:1.3}
+.qc-main .N .tag{
+  display:inline-block;font-size:9px;padding:2px 7px;border-radius:4px;
+  margin-left:6px;vertical-align:middle;font-weight:600;
+}
+.qc-main .N .tag.cost{background:rgba(91,155,213,0.15);color:var(--blue)}
+.qc-main .N .tag.hold{background:rgba(240,192,96,0.15);color:var(--gold)}
+.qc-main .N .tag.sig{font-size:9px;padding:2px 7px;border-radius:4px}
+.qc-main .sub{font-size:11px;color:var(--sub);margin-top:3px}
+.qc-main .pr{font-size:24px;font-weight:900;text-align:right;font-variant-numeric:tabular-nums;letter-spacing:-1px}
+.qc-meta{
+  display:flex;justify-content:space-around;padding:0 16px 12px;
+  font-size:10px;color:var(--sub);
+}
+.qc-meta b{color:var(--text);font-weight:600}
+.qc-pnl{padding:0 16px 12px;font-size:11px;font-weight:600}
+
+/* ── 策略卡片 ── */
+.sc{
+  margin:10px 12px;border-radius:14px;
+  background:var(--card);border:1px solid var(--border);
+  padding:16px;position:relative;overflow:hidden;
+}
+.sc::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(240,192,96,0.3),transparent);
+}
+.sc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.sc-name{font-size:16px;font-weight:800}
+.sc-badge{font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px}
+.sc-note{font-size:12px;color:var(--sub);margin-bottom:12px;line-height:1.6}
+.sc-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sc-gi{background:var(--card2);padding:10px 12px;border-radius:10px;border:1px solid var(--border)}
+.sc-gi .lbl{font-size:10px;color:var(--sub);margin-bottom:3px}
+.sc-gi .val{font-size:13px;font-weight:700;line-height:1.4}
+.sc-gi.full{grid-column:1/-1}
+
+.bias{
+  margin:10px 12px;padding:14px 16px;
+  background:linear-gradient(135deg,rgba(240,192,96,0.06),rgba(212,168,83,0.02));
+  border:1px solid rgba(240,192,96,0.15);border-radius:12px;
+  font-size:12px;line-height:1.7;
+}
+.bias b{color:var(--gold)}
+
+.section-label{
+  font-size:11px;color:var(--sub);padding:16px 16px 4px;
+  font-weight:700;letter-spacing:2px;text-transform:uppercase;
+}
+
+/* ── 底部 ── */
+.btm{
+  position:sticky;bottom:0;z-index:99;
+  background:rgba(10,10,15,0.85);backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);padding:10px 16px;
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:11px;color:var(--sub);
+}
+.btm .chip{padding:4px 12px;border-radius:12px;font-size:10px;font-weight:700}
+.btm .chip.live{background:rgba(46,213,115,0.12);color:#2ed573}
+.btm .chip.off{background:rgba(255,71,87,0.12);color:#ff4757}
+.btm button{
+  background:linear-gradient(135deg,#f0c060,#c89630);
+  color:#000;border:none;padding:8px 22px;border-radius:20px;
+  font-size:13px;font-weight:800;cursor:pointer;
+  box-shadow:0 4px 20px rgba(240,192,96,0.25);
+}
+.btm button:active{transform:scale(0.95);opacity:0.8}
+
+.toast{
+  position:fixed;top:70px;left:50%;transform:translateX(-50%);
+  background:var(--gold);color:#000;padding:10px 24px;
+  border-radius:24px;font-size:13px;font-weight:700;z-index:200;
+  opacity:0;transition:opacity 0.3s;pointer-events:none;
+  box-shadow:0 8px 30px rgba(240,192,96,0.3);
+}
+.toast.show{opacity:1}
+.ft{text-align:center;font-size:10px;color:var(--sub);padding:12px;opacity:0.5}
+
+/* 动画 */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.qc,.sc{animation:slideUp 0.3s ease-out}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="gs">GS</span>盯盘</div>
+  <div class="info"><span class="d" id="dot"></span><span id="clock">--:--</span></div>
+</div>
+
+<div class="idx-strip" id="idxBar"></div>
+
+<div class="tab-wrap">
+  <button class="tab-btn on" data-t="all" onclick="switchTab('all')">全部</button>
+  <button class="tab-btn" data-t="pos" onclick="switchTab('pos')">持仓</button>
+  <button class="tab-btn" data-t="strat" onclick="switchTab('strat')">📋 策略</button>
+</div>
+
+<div id="main"></div>
+
+<div class="btm">
+  <span class="chip live" id="stateChip">就绪</span>
+  <span id="stMsg">东方财富 · 实时行情</span>
+  <button onclick="refresh()">⟳ 刷新</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ======== 配置（改这儿） ========
+const POS = [
+  {c:'600186',m:1,n:'莲花控股',cost:14.43,sh:100},
+  {c:'000066',m:0,n:'中国长城',cost:19.00,sh:300},
+  {c:'159819',m:0,n:'AI ETF',   cost:2.0992,sh:3200},
+];
+const WATCH = [
+  {c:'000063',m:0,n:'中兴通讯'},{c:'601138',m:1,n:'工业富联'},{c:'603296',m:1,n:'华勤技术'},
+];
+const ETF = [
+  {c:'588000',m:1,n:'科创50'},{c:'560080',m:1,n:'中药'},{c:'515880',m:1,n:'通信'},{c:'517380',m:1,n:'创新药'},{c:'588200',m:1,n:'科创芯片'},
+];
+const IDX = [
+  {c:'000001',m:1,n:'上证'},{c:'399001',m:0,n:'深证'},{c:'399006',m:0,n:'创业板'},{c:'000688',m:1,n:'科创50'},
+];
+
+// ======== 策略（改这儿） ========
+const STRAT = {
+  updated:'2026-07-14 01:00',
+  bias:'震荡偏弱。科技三连跌有超卖反弹需求，但长鑫IPO周四打新前资金面持续偏紧。医药/消费走强与科技形成对冲。周二关注中报预告最后冲刺，周三中国GDP是关键变盘节点。',
+  pos:[
+    {c:'000066',sg:'⚠️ 减仓警戒',cl:'#ff4757',act:'持有·谨慎',entry:'条件单<19.00已触发（成本19.00）',stop:'跌破17.92→减半(150股)；跌破17.50→清仓',target:'反弹至19.50-20.00减仓',note:'今日-7.2%跌破所有短期均线。明天若不能站回18.38(MA20)，弱势确认，需严格执行减仓纪律。'},
+    {c:'600186',sg:'🟡 筑底观望',cl:'#f0c060',act:'持有·等突破',entry:'放量突破11.20(MA60)→加仓100股；回踩10.70-10.80不破→加仓',stop:'收盘跌破10.50→止损清仓（亏损约27%）',target:'11.75(MA10)→12.91(MA20)',note:'平台整理第6天，今日放量小阳线偏积极。MA5走平，等MA60突破确认底部。'},
+    {c:'159819',sg:'🟢 正常持有',cl:'#2ed573',act:'持有·可加仓',entry:'回踩2.00-2.02加仓1600股（加后成本约2.055）',stop:'收盘跌破1.96→减仓一半',target:'突破2.10看2.15→2.20',note:'MA5/10/20三线粘合于2.08-2.09，变盘窗口极窄。WAIC周五开幕是向上催化剂。'},
+  ],
+  watch:[
+    {c:'000063',sg:'🟢 首选出击',cl:'#2ed573',act:'39-40主动买入',entry:'39.00-40.00买入；37.50-38.50加仓（MA20/60双重支撑）',stop:'37.50',target:'43→48',note:'全市场最强抗跌科技蓝筹。主力5日净买+55亿。今日仅-1.2%，在大盘暴跌中独善其身。'},
+    {c:'601138',sg:'🟡 等止跌',cl:'#f0c060',act:'观望不急于入场',entry:'65-66试探；63-64加仓（前期支撑密集区）',stop:'跌破61不碰',target:'70→75',note:'连跌5天累计-9%，尚无止跌信号。等连续3天不创新低再考虑。'},
+    {c:'603296',sg:'🔴 远离',cl:'#ff4757',act:'不追',entry:'等回调75-80区间再评估',stop:'-',target:'-',note:'两周内暴涨+15.6%，高位震荡风险极大，追入盈亏比差。'},
+  ],
+  etf:[
+    {c:'588000',sg:'🟢 逢低建仓',cl:'#2ed573',act:'分批买入',entry:'2.08-2.12',stop:'2.02',target:'2.30→2.40'},
+    {c:'560080',sg:'🟢 优先配置',cl:'#2ed573',act:'建仓优先',entry:'0.95-0.97',stop:'0.92',target:'1.05→1.10',note:'最强对冲品种，基药目录+中药政策双催化，与科技板块完美对冲'},
+    {c:'515880',sg:'🟢 WAIC埋伏',cl:'#2ed573',act:'低吸布局',entry:'回调至MA20附近',note:'华为Atlas 950于7/17首秀，通信设备直接受益'},
+    {c:'517380',sg:'🟡 等回调',cl:'#f0c060',act:'等低吸',entry:'MA10附近企稳后介入',note:'基药目录利好已部分兑现，连涨后不宜追高'},
+    {c:'588200',sg:'🔴 暂时规避',cl:'#ff4757',act:'长鑫IPO前不碰',note:'周四长鑫打新，抽血最严重的方向。连跌三天累计-15%+仍未企稳。'},
+  ]
+};
+
+// ======== 引擎 ========
+const M={0:'0',1:'1'};
+function sid(s){return M[s.m]+'.'+s.c}
+const all=[...IDX,...POS,...WATCH,...ETF];
+const uq=all.filter((s,i,a)=>a.findIndex(x=>x.c===s.c)===i);
+
+function f(n,d=2){if(n==null||isNaN(n))return'--';return Number(n).toFixed(d)}
+function sig(c){const all=[...(STRAT.pos||[]),...(STRAT.watch||[]),(STRAT.etf||[])];return all.find(s=>s.c===c)||null}
+
+let tabMode='all',fail=0,tmr=null;
+
+function render(){
+  // 指数
+  let ih='';
+  IDX.forEach(i=>{const d=i._d;if(!d)return;const cl=d.changePct>=0?'#ff4757':'#2ed573';ih+='<div class="idx-item"><div class="l">'+i.n+'</div><div class="p" style="color:'+cl+'">'+f(d.price)+'</div><div class="c" style="color:'+cl+'">'+(d.changePct>=0?'+':'')+f(d.changePct,2)+'%</div></div>'});
+  document.getElementById('idxBar').innerHTML=ih||'<div style="padding:12px;color:var(--sub);text-align:center">加载中...</div>';
+
+  function card(s,held){
+    const d=s._d;if(!d)return'<div class="qc"><div class="qc-main"><div class="L"><div class="N">'+s.n+'</div><div class="sub">'+s.c+' · 等待数据</div></div></div></div>';
+    const sg=sig(s.c),cl=d.changePct>=0?'#ff4757':'#2ed573';
+    let tags='';
+    if(held&&s.cost){tags='<span class="tag cost">成本'+s.cost+'</span><span class="tag hold">'+s.sh+'股</span>'}
+    if(sg)tags+='<span class="tag sig" style="background:'+(sg.cl||'#f0c060')+'15;color:'+(sg.cl||'#f0c060')+'">'+sg.sg+'</span>';
+    let pnl='';if(held&&s.cost&&s.sh&&d.price){const pct=(d.price-s.cost)/s.cost*100;const amt=(d.price-s.cost)*s.sh;pnl='<div class="qc-pnl" style="color:'+(pct>=0?'#ff4757':'#2ed573')+'">浮'+(pct>=0?'盈':'亏')+' '+f(pct,1)+'% | '+f(amt,0)+'元</div>'}
+    return '<div class="qc"><div class="qc-main"><div class="L"><div class="N">'+s.n+' '+tags+'</div><div class="sub">'+s.c+'</div></div><div class="pr" style="color:'+cl+'">'+f(d.price)+'</div></div>'+pnl+'<div class="qc-meta"><span>今开<b>'+f(d.open)+'</b></span><span>最高<b>'+f(d.high)+'</b></span><span>最低<b>'+f(d.low)+'</b></span><span>昨收<b>'+f(d.close)+'</b></span></div></div>';
+  }
+
+  let ph='';let tv=0,tp=0;
+  POS.forEach(s=>{const d=s._d;if(d&&d.price&&s.cost&&s.sh){tv+=d.price*s.sh;tp+=(d.price-s.cost)*s.sh}ph+=card(s,true);});
+  ph='<div class="section-label">💰 持仓 · 市值'+f(tv,0)+'元 <span style="color:'+(tp>=0?'#ff4757':'#2ed573')+'">浮'+(tp>=0?'盈':'亏')+' '+f(tp,0)+'元</span></div>'+ph;
+
+  let wh='<div class="section-label">👀 关注个股</div>';WATCH.forEach(s=>{wh+=card(s,false)});
+  let eh='<div class="section-label">📦 ETF</div>';ETF.forEach(s=>{eh+=card(s,false)});
+
+  let sh='';
+  if(STRAT.bias)sh+='<div class="bias"><b>📌 市场判断</b><br>'+STRAT.bias+'</div>';
+  if(STRAT.pos){sh+='<div class="section-label">💰 持仓操作建议</div>';STRAT.pos.forEach(p=>{sh+='<div class="sc"><div class="sc-head"><span class="sc-name">'+p.n+' ('+p.c+')</span><span class="sc-badge" style="background:'+(p.cl||'#f0c060')+'15;color:'+(p.cl||'#f0c060')+'">'+p.sg+'</span></div><div class="sc-note"><b>'+p.act+'</b> · '+p.note+'</div><div class="sc-grid"><div class="sc-gi"><div class="lbl">🟢 买入/加仓</div><div class="val">'+p.entry+'</div></div><div class="sc-gi"><div class="lbl">🔴 止损</div><div class="val" style="color:#ff4757">'+p.stop+'</div></div><div class="sc-gi full"><div class="lbl">🎯 目标</div><div class="val">'+p.target+'</div></div></div></div>'})}
+  if(STRAT.watch){sh+='<div class="section-label">👀 关注个股</div>';STRAT.watch.forEach(w=>{sh+='<div class="sc"><div class="sc-head"><span class="sc-name">'+w.n+' ('+w.c+')</span><span class="sc-badge" style="background:'+(w.cl||'#f0c060')+'15;color:'+(w.cl||'#f0c060')+'">'+w.act+'</span></div><div class="sc-note">'+w.note+'</div><div class="sc-grid"><div class="sc-gi"><div class="lbl">🟢 入场区间</div><div class="val">'+w.entry+'</div></div><div class="sc-gi"><div class="lbl">🔴 止损</div><div class="val" style="color:#ff4757">'+w.stop+'</div></div><div class="sc-gi full"><div class="lbl">🎯 目标</div><div class="val">'+w.target+'</div></div></div></div>'})}
+  if(STRAT.etf){sh+='<div class="section-label">📦 ETF建议</div>';STRAT.etf.forEach(e=>{sh+='<div class="sc"><div class="sc-head"><span class="sc-name">'+e.n+' ('+e.c+')</span><span class="sc-badge" style="background:'+(e.cl||'#f0c060')+'15;color:'+(e.cl||'#f0c060')+'">'+e.act+'</span></div><div class="sc-note">'+(e.note||'')+'</div><div class="sc-grid"><div class="sc-gi"><div class="lbl">🟢 入场</div><div class="val">'+e.entry+'</div></div><div class="sc-gi"><div class="lbl">🎯 目标</div><div class="val">'+e.target+'</div></div></div></div>'})}
+  sh+='<div class="ft">📅 策略更新于 '+STRAT.updated+'</div>';
+
+  document.getElementById('main').innerHTML=tabMode==='strat'?sh:tabMode==='pos'?ph:ph+wh+eh;
+}
+
+async function fetchQuotes(){
+  try{
+    const resp=await fetch('https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&fields=f2,f3,f4,f12,f14,f15,f16,f17,f18&secids='+uq.map(s=>sid(s)).join(','));
+    if(!resp.ok)throw new Error('');
+    const j=await resp.json();
+    const list=(j.data&&j.data.diff)?j.data.diff:[];
+    list.forEach(it=>{uq.forEach(s=>{if(s.c===it.f12)s._d={name:it.f14||'',price:parseFloat(it.f2)||0,changePct:parseFloat(it.f3)||0,change:parseFloat(it.f4)||0,high:parseFloat(it.f15)||0,low:parseFloat(it.f16)||0,open:parseFloat(it.f17)||0,close:parseFloat(it.f18)||0}})});
+    fail=0;document.getElementById('dot').classList.remove('off');render();
+  }catch(e){fail++;if(fail>=3)document.getElementById('dot').classList.add('off');}
+}
+
+function interval(){
+  const n=new Date(),d=n.getDay(),h=n.getHours(),m=n.getMinutes();
+  if(d===0||d===6)return 300000;
+  const td=d>=1&&d<=5&&((h===9&&m>=30)||h===10||h===11||(h===11&&m<=30)||h===13||h===14||(h===15&&m===0));
+  return td?30000:60000;
+}
+function tick(){
+  const n=new Date();document.getElementById('clock').textContent=n.toTimeString().slice(0,8);
+  const d=n.getDay(),h=n.getHours(),m=n.getMinutes();
+  const td=d>=1&&d<=5&&((h===9&&m>=30)||h===10||h===11||(h===11&&m<=30)||h===13||h===14||(h===15&&m===0));
+  const c=document.getElementById('stateChip');const m2=document.getElementById('stMsg');
+  if(td){c.textContent='交易中';c.className='chip live';m2.textContent='刷新间隔30秒'}else{c.textContent='盘后';c.className='chip off';m2.textContent='刷新间隔60秒'}
+}
+function loop(){clearTimeout(tmr);fetchQuotes().then(()=>{tmr=setTimeout(loop,interval())}).catch(()=>{tmr=setTimeout(loop,60000)})}
+
+// Tab切换（修复版——直接用onclick）
+function switchTab(t){
+  tabMode=t;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
+  document.querySelector('.tab-btn[data-t="'+t+'"]').classList.add('on');
+  render();
+}
+
+document.addEventListener('visibilitychange',()=>{clearTimeout(tmr);if(!document.hidden){fetchQuotes();tmr=setTimeout(loop,interval())}else tmr=setTimeout(loop,300000)});
+
+function refresh(){
+  const t=document.getElementById('toast');t.textContent='刷新中...';t.classList.add('show');
+  fetchQuotes().then(()=>{t.textContent='✅ 已刷新';setTimeout(()=>t.classList.remove('show'),1200)});
+}
+
+fetchQuotes().then(()=>{render();tmr=setTimeout(loop,interval())});
+setInterval(tick,30000);tick();
+</script>
+</body>
+</html>
