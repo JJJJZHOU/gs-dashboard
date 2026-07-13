@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>GS盯盘</title>
+<style>
+:root {
+  --bg: #0f0f0f; --card: #1a1a1a; --card-alt: #222;
+  --border: #2a2a2a; --text: #e0e0e0; --text-muted: #888;
+  --red: #f55656; --green: #26a69a; --gold: #d4a853; --blue: #5b9bd5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:24px;
+  -webkit-tap-highlight-color:transparent;
+}
+.header{
+  background:linear-gradient(135deg,#1a1a2e,#16213e);
+  padding:12px 16px;position:sticky;top:0;z-index:100;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.header h1{font-size:17px;font-weight:700;letter-spacing:1px}
+.header h1 span{color:var(--gold)}
+.status{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:#4caf50;display:inline-block}
+.dot.dead{background:#f44336}
+.off-badge{display:none;font-size:10px;color:var(--red);background:rgba(245,86,86,0.15);padding:2px 8px;border-radius:10px}
+
+.index-bar{
+  display:flex;gap:8px;padding:10px 12px;overflow-x:auto;
+  background:var(--card);border-bottom:1px solid var(--border);
+  -webkit-overflow-scrolling:touch;
+}
+.index-bar::-webkit-scrollbar{display:none}
+.idx{
+  flex:0 0 auto;min-width:85px;padding:8px 10px;
+  background:var(--card-alt);border-radius:8px;text-align:center;
+}
+.idx .n{font-size:10px;color:var(--text-muted)}
+.idx .v{font-size:15px;font-weight:700;margin:1px 0}
+.idx .c{font-size:11px}
+.up{color:var(--red)}.down{color:var(--green)}
+
+.sec{padding:12px}
+.sec-t{font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;letter-spacing:1px}
+.sec-t .sum{font-size:10px;font-weight:400;margin-left:6px}
+
+.crd{
+  background:var(--card);border-radius:10px;padding:10px 14px;
+  margin-bottom:6px;border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.crd:active{background:var(--card-alt)}
+.crd .L{flex:1;min-width:0}
+.crd .N{font-size:15px;font-weight:600}
+.crd .C{font-size:11px;color:var(--text-muted)}
+.crd .P{font-size:17px;font-weight:700;text-align:right;margin:0 10px;font-variant-numeric:tabular-nums}
+.crd .R{text-align:right;min-width:65px}
+.crd .chg{font-size:13px;font-weight:600;padding:3px 8px;border-radius:5px}
+.crd .chg.up{background:rgba(245,86,86,0.15)}
+.crd .chg.down{background:rgba(38,166,154,0.15)}
+.crd .pnl{font-size:10px;margin-top:2px}
+.crd .tag{font-size:9px;padding:1px 6px;border-radius:3px;margin-right:3px}
+.crd .tag.cost{background:rgba(91,155,213,0.15);color:var(--blue)}
+.crd .tag.hold{background:rgba(212,168,83,0.15);color:var(--gold)}
+.dr{
+  display:flex;justify-content:space-between;font-size:11px;
+  color:var(--text-muted);padding:1px 16px 5px;
+}
+.dr span{color:var(--text)}
+
+.sector-list{display:flex;flex-wrap:wrap;gap:6px}
+.s-tag{font-size:11px;padding:4px 10px;border-radius:14px;background:var(--card-alt);border:1px solid var(--border)}
+
+.toast{
+  position:fixed;top:60px;left:50%;transform:translateX(-50%);
+  background:var(--gold);color:#000;padding:6px 16px;
+  border-radius:20px;font-size:12px;font-weight:600;z-index:300;
+  opacity:0;transition:opacity 0.3s;pointer-events:none;
+}
+.toast.show{opacity:1}
+.refresh-btn{
+  position:fixed;bottom:20px;right:16px;width:44px;height:44px;
+  border-radius:50%;background:var(--gold);color:#000;border:none;
+  font-size:20px;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 15px rgba(212,168,83,0.3);z-index:200;cursor:pointer;
+}
+.refresh-btn:active{transform:scale(0.9)}
+.footer{text-align:center;font-size:10px;color:var(--text-muted);padding:16px;opacity:0.6}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📊 <span>GS</span>盯盘</h1>
+  <div class="status">
+    <span class="dot" id="dot"></span>
+    <span id="t">--:--:--</span>
+    <span class="off-badge" id="offBdg">离线</span>
+  </div>
+</div>
+
+<div class="index-bar" id="idxBar">加载中...</div>
+
+<div class="sec">
+  <div class="sec-t">💰 持仓 <span class="sum" id="posSum"></span></div>
+  <div id="positions"></div>
+</div>
+
+<div class="sec">
+  <div class="sec-t">👀 关注</div>
+  <div id="watchlist"></div>
+</div>
+
+<div class="sec">
+  <div class="sec-t">📦 ETF</div>
+  <div id="etfList"></div>
+</div>
+
+<div class="sec">
+  <div class="sec-t">🔥 涨幅榜</div>
+  <div class="sector-list" id="gainers">加载中...</div>
+</div>
+
+<button class="refresh-btn" onclick="refresh()">↻</button>
+<div class="toast" id="toast"></div>
+<div class="footer" id="footer">数据来源：腾讯行情 · 刷新间隔60秒</div>
+
+<script>
+// ====== 配置 ======
+const HOLDINGS = [
+  {code:'600186', mkt:'sh', name:'莲花控股', cost:14.43, shares:100},
+  {code:'000066', mkt:'sz', name:'中国长城', cost:19.00, shares:300},
+  {code:'159819', mkt:'sz', name:'AI ETF',    cost:2.0992, shares:3200},
+];
+const WATCH = [
+  {code:'000063', mkt:'sz', name:'中兴通讯'},
+  {code:'601138', mkt:'sh', name:'工业富联'},
+  {code:'603296', mkt:'sh', name:'华勤技术'},
+];
+const ETFS = [
+  {code:'588000', mkt:'sh', name:'科创50ETF'},
+  {code:'560080', mkt:'sh', name:'中药ETF'},
+  {code:'515880', mkt:'sh', name:'通信ETF'},
+  {code:'517380', mkt:'sh', name:'创新药ETF'},
+];
+const INDICES = [
+  {code:'000001', mkt:'sh', name:'上证'},
+  {code:'399001', mkt:'sz', name:'深证'},
+  {code:'399006', mkt:'sz', name:'创业板'},
+  {code:'000688', mkt:'sh', name:'科创50'},
+];
+
+const STOCK_MAP = {};
+[...HOLDINGS, ...WATCH, ...ETFS, ...INDICES].forEach(s => {
+  STOCK_MAP[s.mkt+s.code] = s.name;
+});
+
+function qqUrl(codes) {
+  // 腾讯行情实时接口
+  return 'https://qt.gtimg.cn/q=' + codes.join(',');
+}
+
+function parseQQ(text) {
+  const result = {};
+  const lines = text.split('\n').filter(l => l.trim());
+  lines.forEach(line => {
+    const m = line.match(/v_(s[zh]\d+)="(.+)"/);
+    if (!m) return;
+    const code = m[1]; // sz000063 or sh600584
+    const fields = m[2].split('~');
+    // 腾讯格式: 0未知 1名称 2代码 3当前价 4昨收 5开盘 6成交量 7外盘 8内盘
+    // 9买一 10买一量 ... 29最新日期 30涨跌额 31涨跌幅 32最高 33最低
+    // 34价格/成交量/成交额 35成交量 36成交额(万) 37换手率 38PE ...
+    if (fields.length < 40) return;
+    result[code] = {
+      name: fields[1],
+      code: fields[2],
+      price: parseFloat(fields[3]) || 0,
+      close: parseFloat(fields[4]) || 0,
+      open: parseFloat(fields[5]) || 0,
+      high: parseFloat(fields[33]) || 0,
+      low: parseFloat(fields[34]) || 0,
+      change: parseFloat(fields[31]) || 0,  // 涨跌额
+      changePct: parseFloat(fields[32]) || 0, // 涨跌幅%
+      amount: fields[37] || '0', // 成交额(万)
+      vol: fields[6] || '0',
+      time: fields[30] || '',
+    };
+  });
+  return result;
+}
+
+function fmt(n,d=2){if(n==null||isNaN(n))return'--';return Number(n).toFixed(d)}
+function fmtAmt(n,unit){
+  if(n==null||isNaN(n))return'--';
+  if(unit==='wan') n=n*10000; // 腾讯返回的是万
+  const abs=Math.abs(n);
+  if(abs>=1e8)return (n/1e8).toFixed(1)+'亿';
+  if(abs>=1e4)return (n/1e4).toFixed(0)+'万';
+  return n.toFixed(0);
+}
+function cls(v){return v>=0?'up':'down'}
+
+function renderCard(s, isHolding) {
+  const cost = isHolding ? s.cost : null;
+  const shares = isHolding ? s.shares : null;
+  const data = s.data;
+
+  if (!data || !data.price) {
+    return `<div class="crd"><div class="L"><div class="N">${s.name}</div><div class="C">${s.code} 等待数据...</div></div></div>`;
+  }
+
+  const chgCls = cls(data.changePct);
+  const sign = data.changePct >= 0 ? '+' : '';
+
+  let tags = '';
+  let pnlHTML = '';
+  if (cost && shares && data.price > 0) {
+    tags += `<span class="tag cost">成本${cost}</span>`;
+    tags += `<span class="tag hold">${shares}股</span>`;
+    const pct = ((data.price - cost) / cost * 100);
+    const amt = (data.price - cost) * shares;
+    const pnlCls = cls(pct);
+    pnlHTML = `<div class="pnl ${pnlCls}">浮${pct>=0?'盈':'亏'} ${fmt(pct,1)}% | ${fmtAmt(amt)}</div>`;
+  }
+
+  return `
+    <div class="crd">
+      <div class="L">
+        <div class="N">${s.name} ${tags}</div>
+        <div class="C">${s.code}</div>
+        ${pnlHTML}
+      </div>
+      <div class="P">${fmt(data.price)}</div>
+      <div class="R">
+        <div class="chg ${chgCls}">${sign}${fmt(data.changePct,2)}%</div>
+      </div>
+    </div>
+    <div class="dr">
+      <span>开${fmt(data.open)}</span><span>高${fmt(data.high)}</span><span>低${fmt(data.low)}</span><span>额${fmtAmt(data.amount,'wan')}</span>
+    </div>`;
+}
+
+function renderIndices(data) {
+  let html = '';
+  INDICES.forEach(idx => {
+    const d = data[idx.mkt+idx.code];
+    if (!d) return;
+    const c = cls(d.changePct);
+    html += `<div class="idx">
+      <div class="n">${idx.name}</div>
+      <div class="v ${c}">${fmt(d.price)}</div>
+      <div class="c ${c}">${d.changePct>=0?'+':''}${fmt(d.changePct,2)}%</div>
+    </div>`;
+  });
+  document.getElementById('idxBar').innerHTML = html || '--';
+}
+
+async function fetchAll() {
+  // 收集所有需要的代码
+  const allStocks = [...HOLDINGS, ...WATCH, ...ETFS, ...INDICES];
+  const codes = allStocks.map(s => s.mkt + s.code);
+
+  try {
+    const resp = await fetch(qqUrl(codes));
+    const text = await resp.text();
+    const data = parseQQ(text);
+
+    // 把数据挂到各个对象上
+    allStocks.forEach(s => { s.data = data[s.mkt+s.code] || null; });
+
+    // 渲染
+    renderIndices(data);
+
+    // 持仓
+    let posHTML = '';
+    let totalVal = 0, totalPnl = 0;
+    HOLDINGS.forEach(s => {
+      if (s.data && s.data.price && s.cost && s.shares) {
+        totalVal += s.data.price * s.shares;
+        totalPnl += (s.data.price - s.cost) * s.shares;
+      }
+      posHTML += renderCard(s, true);
+    });
+    const sumCls = cls(totalPnl);
+    document.getElementById('posSum').innerHTML =
+      `市值<b style="color:var(--text)"> ${fmtAmt(totalVal)}</b> | <span class="${sumCls}">浮${totalPnl>=0?'盈':'亏'} ${fmtAmt(totalPnl)}</span>`;
+    document.getElementById('positions').innerHTML = posHTML;
+
+    // 关注
+    document.getElementById('watchlist').innerHTML = WATCH.map(s => renderCard(s, false)).join('');
+
+    // ETF
+    document.getElementById('etfList').innerHTML = ETFS.map(s => renderCard(s, false)).join('');
+
+    // 状态
+    const now = new Date();
+    document.getElementById('t').textContent = now.toTimeString().slice(0,8);
+    document.getElementById('dot').classList.remove('dead');
+    document.getElementById('offBdg').style.display = 'none';
+    document.getElementById('footer').textContent =
+      '数据来源：腾讯行情 · 刷新间隔60秒 · 上次 ' + now.toTimeString().slice(0,8);
+
+  } catch(e) {
+    document.getElementById('dot').classList.add('dead');
+    document.getElementById('offBdg').style.display = 'inline';
+    document.getElementById('footer').textContent = '⚠️ 网络异常，60秒后重试...';
+    console.error(e);
+  }
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1500);
+}
+
+function refresh() {
+  toast('刷新中...');
+  fetchAll().then(() => toast('✅ 已刷新'));
+}
+
+// 启动
+fetchAll();
+setInterval(fetchAll, 60000);
+
+// 切后台降频
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    window._bgInt = setInterval(fetchAll, 300000);
+  } else {
+    clearInterval(window._bgInt);
+    fetchAll();
+  }
+});
+</script>
+</body>
+</html>
