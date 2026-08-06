@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Show Me The Money</title>
+<style>
+:root{--bg:#0a0a0f;--card:rgba(20,20,35,0.9);--card2:rgba(30,30,50,0.8);--border:rgba(255,255,255,0.06);--text:#e8e8f0;--sub:#8888aa;--up:#ff4757;--down:#2ed573;--gold:#f0c060;--blue:#5b9bd5}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;-webkit-tap-highlight-color:transparent;background-image:radial-gradient(ellipse at 20% 0%,rgba(240,192,96,0.06) 0%,transparent 50%),radial-gradient(ellipse at 80% 0%,rgba(91,155,213,0.04) 0%,transparent 50%)}
+.topbar{position:sticky;top:0;z-index:99;background:rgba(10,10,15,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:50px}
+.topbar .brand{font-size:20px;font-weight:900;letter-spacing:-1px}
+.topbar .brand .gs{background:linear-gradient(135deg,#f0c060,#d4a853);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar .info{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--sub)}
+.topbar .d{width:8px;height:8px;border-radius:50%;background:#2ed573;box-shadow:0 0 8px rgba(46,213,115,0.6)}
+.topbar .d.off{background:#ff4757;box-shadow:0 0 8px rgba(255,71,87,0.6)}
+.idx-strip{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:12px;gap:8px;background:rgba(20,20,35,0.5);border-bottom:1px solid var(--border)}
+.idx-strip::-webkit-scrollbar{display:none}
+.idx-item{flex:0 0 auto;min-width:90px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:12px;text-align:center;backdrop-filter:blur(10px)}
+.idx-item .l{font-size:10px;color:var(--sub);margin-bottom:4px;letter-spacing:1px}
+.idx-item .p{font-size:16px;font-weight:800;margin-bottom:2px}
+.idx-item .c{font-size:10px;font-weight:600}
+.tab-wrap{position:sticky;top:50px;z-index:98;background:rgba(0,0,0,0.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:6px 12px;display:flex;gap:6px}
+.tab-btn{flex:1;padding:10px 0;font-size:13px;font-weight:700;color:var(--sub);background:transparent;border:none;border-radius:10px;cursor:pointer;text-align:center;transition:all 0.2s;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.tab-btn:active{background:rgba(255,255,255,0.05)}
+.tab-btn.on{color:var(--gold);background:rgba(240,192,96,0.1);box-shadow:0 0 20px rgba(240,192,96,0.1)}
+.qc{margin:10px 12px;border-radius:14px;background:var(--card);border:1px solid var(--border);overflow:hidden;position:relative;backdrop-filter:blur(10px)}
+.qc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(240,192,96,0.3),transparent)}
+.qc-main{display:flex;align-items:center;padding:16px}
+.qc-main .L{flex:1;min-width:0}
+.qc-main .N{font-size:17px;font-weight:800;line-height:1.3}
+.qc-main .N .tag{display:inline-block;font-size:9px;padding:2px 7px;border-radius:4px;margin-left:6px;vertical-align:middle;font-weight:600}
+.qc-main .N .tag.cost{background:rgba(91,155,213,0.15);color:var(--blue)}
+.qc-main .N .tag.hold{background:rgba(240,192,96,0.15);color:var(--gold)}
+.qc-main .N .tag.sig{font-size:9px;padding:2px 7px;border-radius:4px}
+.qc-main .sub{font-size:11px;color:var(--sub);margin-top:3px}
+.qc-main .pr{font-size:24px;font-weight:900;text-align:right;font-variant-numeric:tabular-nums;letter-spacing:-1px}
+.qc-meta{display:flex;justify-content:space-around;padding:0 16px 12px;font-size:10px;color:var(--sub)}
+.qc-meta b{color:var(--text);font-weight:600}
+.qc-pnl{padding:0 16px 12px;font-size:11px;font-weight:600}
+.sc{margin:10px 12px;border-radius:14px;background:var(--card);border:1px solid var(--border);padding:16px;position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(240,192,96,0.3),transparent)}
+.sc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.sc-name{font-size:16px;font-weight:800}
+.sc-badge{font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px}
+.sc-note{font-size:12px;color:var(--sub);margin-bottom:12px;line-height:1.6}
+.sc-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sc-gi{background:var(--card2);padding:10px 12px;border-radius:10px;border:1px solid var(--border)}
+.sc-gi .lbl{font-size:10px;color:var(--sub);margin-bottom:3px}
+.sc-gi .val{font-size:13px;font-weight:700;line-height:1.4}
+.sc-gi.full{grid-column:1/-1}
+.bias{margin:10px 12px;padding:14px 16px;background:linear-gradient(135deg,rgba(240,192,96,0.06),rgba(212,168,83,0.02));border:1px solid rgba(240,192,96,0.15);border-radius:12px;font-size:12px;line-height:1.7}
+.bias b{color:var(--gold)}
+.section-label{font-size:11px;color:var(--sub);padding:16px 16px 4px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
+.wl-actions{display:flex;gap:2px;margin-left:8px}
+.wl-btn{width:24px;height:24px;border-radius:6px;border:1px solid var(--border);background:var(--card2);color:var(--text-muted);font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:0;line-height:1}
+.wl-btn:active{background:rgba(240,192,96,0.2);color:var(--gold)}
+.wl-btn.hl-on{background:rgba(240,192,96,0.2);color:var(--gold);border-color:var(--gold)}
+.qc.highlighted{border-color:var(--gold);box-shadow:0 0 12px rgba(240,192,96,0.15)}
+.btm{position:sticky;bottom:0;z-index:99;background:rgba(10,10,15,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--sub)}
+.btm .chip{padding:4px 12px;border-radius:12px;font-size:10px;font-weight:700}
+.btm .chip.live{background:rgba(46,213,115,0.12);color:#2ed573}
+.btm .chip.off{background:rgba(255,71,87,0.12);color:#ff4757}
+.btm button{background:linear-gradient(135deg,#f0c060,#c89630);color:#000;border:none;padding:8px 22px;border-radius:20px;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 4px 20px rgba(240,192,96,0.25)}
+.btm button:active{transform:scale(0.95);opacity:0.8}
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;padding:10px 24px;border-radius:24px;font-size:13px;font-weight:700;z-index:200;opacity:0;transition:opacity 0.3s;pointer-events:none;box-shadow:0 8px 30px rgba(240,192,96,0.3)}
+.toast.show{opacity:1}
+.ft{text-align:center;font-size:10px;color:var(--sub);padding:12px;opacity:0.5}
+.cat-head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;margin:6px 12px 0;background:var(--card2);border-radius:10px;border:1px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
+.cat-head:active{background:rgba(240,192,96,0.1)}
+.cat-head .cn{font-size:13px;font-weight:700}
+.cat-head .cc{font-size:10px;color:var(--sub)}
+.cat-head .car{font-size:12px;color:var(--sub);transition:transform 0.2s}
+.cat-head .car.open{transform:rotate(90deg)}
+.cat-body{display:none}
+.cat-body.open{display:block}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.qc,.sc{animation:slideUp 0.3s ease-out}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="brand"><span class="gs">GS</span>盯盘</div><div class="info"><span class="d" id="dot"></span><span id="clock">--:--</span></div></div>
+<div class="idx-strip" id="idxBar"></div>
+<div class="tab-wrap">
+<button class="tab-btn on" data-t="all" onclick="switchTab('all')">全部</button>
+<button class="tab-btn" data-t="pos" onclick="switchTab('pos')">持仓</button>
+<button class="tab-btn" data-t="watch" onclick="switchTab('watch')">关注</button>
+<button class="tab-btn" data-t="cicc" onclick="switchTab('cicc')">中金</button>
+<button class="tab-btn" data-t="strat" onclick="switchTab('strat')">策略</button>
+</div>
+<div id="main"></div>
+<div class="btm">
+<span class="chip live" id="stateChip">就绪</span>
+<span id="stMsg">东方财富·实时行情</span>
+<button onclick="refresh()">刷新</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════ 配置 ═══════
+var POS=[
+  {c:'000066',m:0,n:'中国长城',cost:24.8083,sh:300},
+  {c:'159819',m:0,n:'AI ETF',cost:2.033,sh:3200},
+  {c:'601991',m:1,n:'大唐发电',cost:8.8251,sh:200},
+  {c:'600760',m:1,n:'中航沈飞',cost:71.9201,sh:100},
+  {c:'600900',m:1,n:'长江电力',cost:29.0503,sh:100},
+  {c:'601168',m:1,n:'西部矿业',cost:40.00,sh:100}
+];
+var WATCH=[
+  {c:'600118',m:1,n:'中国卫星',sg:'6连阳+19%'},
+  {c:'159048',m:0,n:'机器人ETF大成'},{c:'600580',m:1,n:'卧龙电驱'}
+];
+var CICC_GROUPS=[
+  {cat:'有色金属',items:[
+    {c:'600988',m:1,n:'赤峰黄金',sg:'+1.13%·冲高回落',act:'等37-38回调',entry:'8/6振幅6.17%从43.60回落到41.30。距37-38区间还远。不追高等深回调。',stop:'36',target:'45-48'},
+    {c:'601899',m:1,n:'紫金矿业',sg:'+1.17%·有色持续'},
+    {c:'603993',m:1,n:'洛阳钼业'},
+    {c:'601168',m:1,n:'西部矿业',sg:'-3.14%·39.73接近39',act:'39.00条件单买100股',entry:'8/6-3.14%振幅8.31%最低39.21。MA多头排列。已有40.00持仓。加仓39.00。',stop:'35.50',target:'45-48'},
+    {c:'002532',m:0,n:'天山铝业'},
+    {c:'000060',m:0,n:'锡业股份'},
+    {c:'600549',m:1,n:'厦门钨业',sg:'+8.79%·两天+15%',act:'等待回调',entry:'今天+8.79%放量58亿！两天累计+15%。有色全面爆发。等回调到MA5附近再评估。'},
+    {c:'000657',m:0,n:'中钨高新',sg:'⚠️周四-7.88%',act:'暂不建仓',entry:'周四-7.88%后周五大概率反弹。但硬质合金科技属性重。等右侧企稳。'}
+  ]},
+  {cat:'煤炭',items:[
+    {c:'601225',m:1,n:'陕西煤业',sg:'中金+17%',act:'空间小·低优先',entry:'8/6+4.14%煤炭突然大涨。高股息逻辑不变。空间不如有色。'}
+  ]},
+  {cat:'电力新能源',items:[
+    {c:'002150',m:0,n:'正泰电源',sg:'中金+73%·+1.23%',act:'等长鑫后建仓·暂缓',entry:'今天+1.23%收21.32。电网设备持续走强。目标38不变。等长鑫上市后。',stop:'暂不建仓',target:'38'},
+    {c:'600732',m:1,n:'爱旭股份'},
+    {c:'600438',m:1,n:'福能股份'},
+    {c:'600011',m:1,n:'华能国际'},
+    {c:'002028',m:0,n:'思源电气',sg:'⚠️今日-6.98%',act:'暂不建仓',entry:'电网设备被科技拖累。等企稳。'},
+    {c:'600312',m:1,n:'平高电气',sg:'今日-1.01%',act:'持有观察',entry:'昨日+4.5%今日回吐-1.01%。电网设备方向不变。'}
+  ]},
+  {cat:'物流',items:[
+    {c:'601872',m:1,n:'招商轮船',sg:'-1.22%·持续回调',act:'继续观望',entry:'8/6-1.22%收17.88。连续回吐前天涨幅。油价波动油运承压。等方向。',stop:'6.20',target:'8.5-9.0',note:'油价不确定+美伊谈判。不缺机会继续等。'},
+    {c:'600026',m:1,n:'中远海能',sg:'+6.05%·航运走强',act:'观望',entry:'今天+6.05%振幅10%放量14亿。航运板块共振。但油价不确定仍大。'},
+    {c:'002120',m:0,n:'韵达股份'}
+  ]},
+  {cat:'机械军工',items:[
+    {c:'002179',m:0,n:'中航光电'},
+    {c:'600031',m:1,n:'三一重工'}
+  ]},
+  {cat:'银行',items:[
+    {c:'002142',m:0,n:'宁波银行',sg:'31.74·最低31.32进区间',act:'31.30-31.60买100股',entry:'8/6最低31.32进入31.30-32区间。PE仅6倍。防守标的优先度低于进攻方向。',stop:'30.50',target:'35-38',note:'防守偏多暂缓。优先牧原+盛路。'},
+    {c:'600919',m:1,n:'江苏银行'}
+  ]},
+  {cat:'非银金融',items:[
+    {c:'600030',m:1,n:'中信证券',sg:'中金+43%·+0.64%',act:'等长鑫后',entry:'今天+0.64%收28.18。券商板块企稳。等长鑫IPO催化剂。'},
+    {c:'000776',m:0,n:'广发证券',sg:'-0.80%·21.20回到区间',act:'等20.80-21.30买200股',entry:'8/6-0.80%收21.20。回到建仓区。券商弱势中。暂不优先等长鑫后。',stop:'19.50',target:'28'},
+    {c:'601318',m:1,n:'中国平安',sg:'-0.96%·保险弱势',act:'观望',entry:'8/6-0.96%收53.50。银行保险继续被科技虹吸。'},
+    {c:'601601',m:1,n:'中国太保',sg:'今日+2.72%',act:'保险走强',entry:'跟随平安。保险板块逆势防守。'}
+  ]},
+  {cat:'地产',items:[{c:'002244',m:0,n:'滨江集团'}]},
+  {cat:'科技硬件',items:[
+    {c:'002938',m:0,n:'鹏鼎控股',sg:'🔄今日PCB涨停潮',act:'等回调确认',entry:'今天PCB板块15+只涨停(深南/沪电/东山集体涨停)。鹏鼎大概率跟涨。但高潮后必分化等回调。'},
+    {c:'002916',m:0,n:'深南电路',sg:'🔄今日涨停！',act:'等回调',entry:'今天PCB板块涨停潮！深南电路涨停。但高潮日后分化。不追高等回调确认。'},
+    {c:'002371',m:0,n:'北方华创',sg:'跟涨半导体反弹',act:'暂不建仓',entry:'今天芯片+先进封装涨停潮。北方华创跟涨。但半导体波动仍大等右侧。'}
+  ]},
+  {cat:'汽车',items:[{c:'600066',m:1,n:'宇通客车',sg:'汽车板块走强',act:'观望',entry:'今天汽车随大盘反弹。但宇通前期波动过大等企稳。'}]},
+  {cat:'消费',items:[
+    {c:'600519',m:1,n:'贵州茅台',sg:'-1.65%·白酒继续承压'},
+    {c:'603345',m:1,n:'安井食品'}
+  ]},
+  {cat:'农林牧渔',items:[
+    {c:'002458',m:0,n:'益生股份',sg:'中金+44%·+1.59%',act:'等8.0-8.3低吸',entry:'今天+1.59%收8.95。养殖板块温和走强。等8.0-8.3回调区间。',stop:'7.5',target:'12'},
+    {c:'002714',m:0,n:'牧原股份',sg:'38.37·38以下可买',act:'37.80-38.00买100股',entry:'8/6缩量15.68亿(近期最低)。最低37.80进区间。横盘4天蓄力。猪周期独立。',stop:'35',target:'45-50',note:'明天优先建仓。挂37.80-38.00。'},
+  ]},
+  {cat:'医药',items:[
+    {c:'603259',m:1,n:'药明康德',sg:'-3.25%·进135-142区间',act:'等138-142买100股',entry:'8/6-3.25%最低141.45。进入135-142区间！涨停后仅2天回调时间不够。等138-140更安全。',stop:'130',target:'167',note:'中金目标167华泰206。H1营收+39%超预期。再等一天确认。'}
+  ]},
+  {cat:'传媒',items:[
+    {c:'002555',m:0,n:'三七互娱'},
+    {c:'002517',m:0,n:'恺英网络'}
+  ]}
+];
+var CICC=[];CICC_GROUPS.forEach(function(g){g.items.forEach(function(s){CICC.push(s)})});
+var ETF=[
+  {c:'510300',m:1,n:'沪深300'},{c:'560080',m:1,n:'中药'},
+  {c:'159915',m:0,n:'创业板'},{c:'159048',m:0,n:'机器人ETF大成'}
+];
+var IDX=[
+  {c:'000001',m:1,n:'上证'},{c:'399001',m:0,n:'深证'},
+  {c:'399006',m:0,n:'创业板'},{c:'000688',m:1,n:'科创50'}
+];
+var STRAT={
+  updated:'2026-08-06 23:00',
+  bias:'8/6周四分化。沪指平收深市跌，3700+下跌。长城14.94减仓100股(几乎日内最高15.10)！西部矿业40买入+39条件单保留。牧原最低37.80精准进区间。药明-3.25%至142.70进135-142区间。6G英伟达催化爆发(通宇/武汉凡谷涨停)。AI ETF最低1.799未触发1.84减仓。中金8月超配：化工+通信+有色+电力+证券。有色已配西部矿业。8/7周五速查：牧原38买+西部39条件单+长城14.30-14.50接回+AI ETF 1.84-1.85卖+盛路通信(6G)等8.10-8.30回踩。',
+  pos:[
+    {c:'000066',sg:'14.94已减仓100股',cl:'#2ed573',act:'等14.30-14.50接回100股',entry:'成本24.81。8/6最高15.10你卖在14.94(几乎日内最高！)。收盘14.73。明天挂14.30-14.50接回。',stop:'不加不补',target:'14.30-14.50接回',note:'高卖低接。14.94卖=14.73收，已做出约1.4%差价。明天等回踩MA5(14.25)附近接回。'},
+    {c:'159819',sg:'挂1.84-1.85减500份',cl:'#ff4757',act:'1.84-1.85卖500份',entry:'8/6最低1.799振幅4.37%缩量。CPO/PCB/半导体连涨4天后分化。明天冲高就减。',stop:'不清仓',target:'3200→2700份',note:'挂1.84-1.85条件单。保留2700底仓。'},
+    {c:'601991',sg:'-2.80%连跌两天',cl:'#f0c060',act:'200股持有',entry:'成本8.83现6.25。四连涨后连跌两天回吐。电力方向资金流出。',stop:'不补',target:'7.00-7.50',note:'电力板块-1.08%今日被抽血。大唐防守属性不变。等反弹。'},
+    {c:'600760',sg:'+0.31%微涨企稳',cl:'#f0c060',act:'100股持有',entry:'成本71.92现42.65。军工独立走势。科技分化时沈飞微涨。',stop:'不加',target:'45-48减仓',note:'独立逻辑不变。继续持有。'},
+    {c:'600900',sg:'-0.04%基本企稳',cl:'#f0c060',act:'100股不加仓',entry:'成本29.05现27.75。三连跌后基本企稳。不加仓。',stop:'27.50',target:'32-34',note:'底仓持有等风格轮回。不补。'},
+    {c:'601168',sg:'-3.14%振幅8.31%',cl:'#f0c060',act:'39.00条件单保留',entry:'成本40.00现39.73。8/6最低39.21距39仅0.54%。振幅8.31%。MA多头排列完美。',stop:'35.50',target:'45-48',note:'39.00加仓100股。两笔均价39.50。MA5=39.03支撑。'}
+  ],
+  new:[
+    {c:'002714',sg:'牧原38.37进区间',cl:'#2ed573',act:'37.80-38.00买100股',entry:'8/6最低37.80精准进区间。缩量到15.68亿(近期最低)。横盘4天蓄力。猪周期独立于科技。',stop:'35',target:'45-50',note:'明天优先建仓！挂37.80-38.00条件单。'},
+    {c:'002446',sg:'盛路通信6G新方向',cl:'#5b9bd5',act:'等8.10-8.30买100股',entry:'8/6+7.26%振幅9.55%非涨停。英伟达6G催化。MA5(8.09)和MA20(8.06)金叉。等回踩均线。',stop:'7.50',target:'9.50-10',note:'6G=中金超配∩市场确认。不追高，等回踩8.10-8.30买。'},
+    {c:'002142',sg:'宁波31.74缩量',cl:'#f0c060',act:'等31.30-31.60买100股',entry:'8/6最低31.32进入区间。银行被科技虹吸但PE仅6倍。防守偏多暂不优先。',stop:'30.50',target:'35-38',note:'防守标的。已有大唐+沈飞+长电，优先进攻方向。'},
+    {c:'603259',sg:'药明-3.25%进区间',cl:'#f0c060',act:'等138-142买100股',entry:'8/6-3.25%最低141.45进入135-142区间。但涨停后才2天回调时间不够。等138-140更安全。',stop:'130',target:'167',note:'中金目标167。回调空间够了(-4%)但时间不够。再等一天。'},
+    {c:'600988',sg:'赤峰+1.13%冲高回落',cl:'#f0c060',act:'等37-38回调',entry:'8/6振幅6.17%从43.60回落到41.30。距37-38区间还远。继续等。',stop:'35',target:'45-48',note:'赤峰是错过买点的教训。不追高等深回调。'}
+  ],
+  watch:[
+    {c:'600118',sg:'6连阳+19%不追',cl:'#f0c060',act:'继续等57-59',entry:'8/6+3.48%收65.33。6连阳累涨+19%。距57-59建仓区越来越远。不追。',note:'V型反弹。继续等。'},
+    {c:'600580',sg:'卧龙-1.71%回调',cl:'#f0c060',act:'等34.5-35.5',entry:'8/6-1.71%收36.23。继续回调。宇树8/10申购前窗口。距34.5-35.5还差。',stop:'31',target:'40-45',note:'宇树申购前最后窗口。回调是机会。'},
+    {c:'159048',sg:'机器人ETF-0.88%',cl:'#5b9bd5',act:'等0.86-0.89短线',entry:'8/6-0.88%收0.903。宇树IPO短线。继续回调。',note:'8/10前出。'}
+  ],
+  etf:[
+    {c:'510300',sg:'-0.11%窄幅震荡',cl:'#f0c060',act:'等4.55-4.65',entry:'8/6-0.11%收4.709。等回调到建仓区间。',note:'宽基底仓。不追。'},
+    {c:'560080',sg:'-0.70%防御续跌',cl:'#f0c060',act:'观望',entry:'中药ETF。关注非持仓。',note:'继续跟踪。'},
+    {c:'159915',sg:'-0.56%回调',cl:'#f0c060',act:'等3.00-3.10',entry:'创业板ETF。8/6-0.56%收3.54。等回调。',note:'原定区间不变。'},
+    {c:'159048',sg:'宇树短线-0.88%',cl:'#5b9bd5',act:'0.86-0.89短线',entry:'机器人ETF。8/10前出。',note:'短线轻仓。'}
+  ]
+};
+
+// ═══════ 引擎 ═══════
+var M={0:'0',1:'1'};
+function sid(s){return M[s.m]+'.'+s.c}
+var UQ=(function(){var s=IDX.concat(POS).concat(WATCH).concat(CICC).concat(ETF);var m={};return s.filter(function(x){if(m[x.c])return false;m[x.c]=true;return true})})();
+
+function f(n,d){d=d||2;if(n==null||isNaN(n))return'--';return Number(n).toFixed(d)}
+function lookupName(c){var all=POS.concat(WATCH).concat(CICC).concat(ETF).concat(IDX);var s=all.find(function(x){return x.c===c});return s?s.n:c}
+function lookupSig(c){var all=(STRAT.pos||[]).concat(STRAT.watch||[]).concat(STRAT.etf||[]).concat(STRAT.new||[]);return all.find(function(s){return s.c===c})||CICC.find(function(s){return s.c===c&&s.sg})||null}
+
+// ── 关注标的排序+高亮 ──
+function loadWL(){try{return JSON.parse(localStorage.getItem('wlOrder')||'[]')}catch(e){return[]}}
+function saveWL(arr){localStorage.setItem('wlOrder',JSON.stringify(arr))}
+function loadHL(){try{return JSON.parse(localStorage.getItem('wlHL')||'[]')}catch(e){return[]}}
+function saveHL(arr){localStorage.setItem('wlHL',JSON.stringify(arr))}
+(function(){
+  var order=loadWL(),hl=loadHL(),m={};
+  WATCH.forEach(function(s,i){m[s.c]=i});
+  if(order.length===WATCH.length&&order.every(function(c){return m[c]!=null})){
+    WATCH.sort(function(a,b){return order.indexOf(a.c)-order.indexOf(b.c)});
+  }else{saveWL(WATCH.map(function(s){return s.c}))}
+  if(!hl.length)saveHL([]);
+})();
+function moveWL(idx,dir){
+  var n=idx+dir;if(n<0||n>=WATCH.length)return;
+  var t=WATCH[idx];WATCH[idx]=WATCH[n];WATCH[n]=t;
+  saveWL(WATCH.map(function(s){return s.c}));render();
+}
+function toggleHL(idx){
+  var c=WATCH[idx].c,hl=loadHL(),i=hl.indexOf(c);
+  if(i>=0)hl.splice(i,1);else hl.push(c);
+  saveHL(hl);render();
+}
+
+var tabMode='all',fail=0,tmr=null;
+
+function render(){
+  // 指数条
+  var ih='';
+  IDX.forEach(function(i){var d=i._d;if(!d)return;var cl=d.changePct>=0?'#ff4757':'#2ed573';ih+='<div class="idx-item"><div class="l">'+i.n+'</div><div class="p" style="color:'+cl+'">'+f(d.price)+'</div><div class="c" style="color:'+cl+'">'+(d.changePct>=0?'+':'')+f(d.changePct,2)+'%</div></div>'});
+  document.getElementById('idxBar').innerHTML=ih||'<div style="padding:12px;color:var(--sub);text-align:center">加载中...</div>';
+
+  // 行情卡片
+  function card(s,held){
+    var d=s._d;if(!d)return'<div class="qc'+(s._hcls||'')+'"><div class="qc-main"><div class="L"><div class="N">'+s.n+'</div><div class="sub">'+s.c+' · 等待数据</div></div></div></div>';
+    var sg=lookupSig(s.c),cl=d.changePct>=0?'#ff4757':'#2ed573',tags='';
+    if(held&&s.cost){tags='<span class="tag cost">成本'+s.cost+'</span><span class="tag hold">'+s.sh+'股</span>'}
+    if(sg)tags+='<span class="tag sig" style="background:'+(sg.cl||'#f0c060')+'15;color:'+(sg.cl||'#f0c060')+'">'+sg.sg+'</span>';
+    var pnl='';if(held&&s.cost&&s.sh&&d.price){var pct=(d.price-s.cost)/s.cost*100,amt=(d.price-s.cost)*s.sh;pnl='<div class="qc-pnl" style="color:'+(pct>=0?'#ff4757':'#2ed573')+'">浮'+(pct>=0?'盈':'亏')+' '+f(pct,1)+'% | '+f(amt,0)+'元</div>'}
+    return'<div class="qc'+(s._hcls||'')+'"><div class="qc-main"><div class="L"><div class="N">'+s.n+' '+tags+'</div><div class="sub">'+s.c+'</div></div><div class="pr" style="color:'+cl+'">'+f(d.price)+'</div></div>'+pnl+'<div class="qc-meta"><span>今开<b>'+f(d.open)+'</b></span><span>最高<b>'+f(d.high)+'</b></span><span>最低<b>'+f(d.low)+'</b></span><span>昨收<b>'+f(d.close)+'</b></span></div></div>';
+  }
+
+  // 持仓
+  var ph='',tv=0,tp=0;
+  POS.forEach(function(s){var d=s._d;if(d&&d.price&&s.cost&&s.sh){tv+=d.price*s.sh;tp+=(d.price-s.cost)*s.sh}ph+=card(s,true)});
+  ph='<div class="section-label">持仓 · 市值'+f(tv,0)+'元 <span style="color:'+(tp>=0?'#ff4757':'#2ed573')+'">浮'+(tp>=0?'盈':'亏')+' '+f(tp,0)+'元</span></div>'+ph;
+
+  // 关注
+  var hl=loadHL(),wh='<div class="section-label">关注标的 · ★突出 · ▲▼排序</div>';
+  WATCH.forEach(function(s,i){
+    var hcls=hl.indexOf(s.c)>=0?' highlighted':'';
+    if(tabMode==='watch')s._hcls=hcls;
+    wh+=card(s,false)+(tabMode==='watch'?actionBtns(i,hl):'');
+  });
+  function actionBtns(i,hl){
+    var isHL=hl.indexOf(WATCH[i].c)>=0;
+    return'<div style="display:flex;justify-content:flex-end;padding:0 14px 6px;gap:2px">'+
+    '<button class="wl-btn" onclick="moveWL('+i+',-1)">▲</button>'+
+    '<button class="wl-btn" onclick="moveWL('+i+',1)">▼</button>'+
+    '<button class="wl-btn'+(isHL?' hl-on':'')+'" onclick="toggleHL('+i+')">★</button></div>';
+  }
+
+  // ETF
+  var eh='<div class="section-label">ETF</div>';ETF.forEach(function(s){eh+=card(s,false)});
+  var ch='<div class="section-label">中金 · 年内二次买点</div>';
+  CICC_GROUPS.forEach(function(g,i){
+    ch+='<div class="cat-head" onclick="toggleCat('+i+')"><div><span class="cn">'+g.cat+'</span><span class="cc"> '+g.items.length+'只</span></div><span class="car" id="car'+i+'">▶</span></div>';
+    ch+='<div class="cat-body" id="cat'+i+'">';g.items.forEach(function(s){ch+=card(s,false)});ch+='</div>';
+  });
+
+	  // 策略
+  var sh='';
+  if(STRAT.bias)sh+='<div class="bias"><b>市场判断</b><br>'+STRAT.bias+'</div>';
+  if(STRAT.pos){sh+='<div class="cat-head" onclick="toggleStrat(\'pos\')"><div><span class="cn">持仓操作建议</span><span class="cc"> '+STRAT.pos.length+'只</span></div><span class="car" id="scar_pos">▶</span></div>';sh+='<div class="cat-body" id="sbody_pos">';STRAT.pos.forEach(function(p){sh+=stratCard(p,'pos')});sh+='</div>';}
+  if(STRAT.new){sh+='<div class="cat-head" onclick="toggleStrat(\'new\')"><div><span class="cn">新建仓建议</span><span class="cc"> '+STRAT.new.length+'只</span></div><span class="car" id="scar_new">▶</span></div>';sh+='<div class="cat-body" id="sbody_new">';STRAT.new.forEach(function(n){sh+=stratCard(n,'new')});sh+='</div>';}
+  if(STRAT.watch){sh+='<div class="cat-head" onclick="toggleStrat(\'watch\')"><div><span class="cn">关注标的策略</span><span class="cc"> '+STRAT.watch.length+'只</span></div><span class="car" id="scar_watch">▶</span></div>';sh+='<div class="cat-body" id="sbody_watch">';STRAT.watch.forEach(function(w){sh+=stratCard(w,'watch')});sh+='</div>';}
+  if(STRAT.etf){sh+='<div class="cat-head" onclick="toggleStrat(\'etf\')"><div><span class="cn">ETF建议</span><span class="cc"> '+STRAT.etf.length+'只</span></div><span class="car" id="scar_etf">▶</span></div>';sh+='<div class="cat-body" id="sbody_etf">';STRAT.etf.forEach(function(e){sh+=stratCard(e,'etf')});sh+='</div>';}
+  sh+='<div class="ft">策略更新于 '+STRAT.updated+'</div>';
+  function stratCard(p,type){
+    var nm=lookupName(p.c);
+    return'<div class="sc"><div class="sc-head"><span class="sc-name">'+nm+' ('+p.c+')</span><span class="sc-badge" style="background:'+(p.cl||'#f0c060')+'15;color:'+(p.cl||'#f0c060')+'">'+(p.sg||p.act)+'</span></div><div class="sc-note"><b>'+(p.act||'')+'</b> · '+(p.note||'')+'</div><div class="sc-grid"><div class="sc-gi"><div class="lbl">入场</div><div class="val">'+(p.entry||'-')+'</div></div><div class="sc-gi"><div class="lbl">止损</div><div class="val" style="color:#ff4757">'+(p.stop||'-')+'</div></div><div class="sc-gi full"><div class="lbl">目标</div><div class="val">'+(p.target||'-')+'</div></div></div></div>';
+  }
+
+  document.getElementById('main').innerHTML=tabMode==='strat'?sh:tabMode==='pos'?ph:tabMode==='watch'?wh:tabMode==='cicc'?ch:ph+wh+ch+eh;
+}
+
+// ═══════ 数据获取 ═══════
+async function fetchQuotes(){
+  try{
+    var url='https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&fields=f2,f3,f4,f12,f14,f15,f16,f17,f18&secids='+UQ.map(function(s){return sid(s)}).join(',');
+    var resp=await fetch(url);
+    if(!resp.ok)throw new Error('');
+    var j=await resp.json();
+    var list=(j.data&&j.data.diff)?j.data.diff:[];
+    list.forEach(function(it){UQ.forEach(function(s){if(s.c===it.f12)s._d={name:it.f14||'',price:parseFloat(it.f2)||0,changePct:parseFloat(it.f3)||0,change:parseFloat(it.f4)||0,high:parseFloat(it.f15)||0,low:parseFloat(it.f16)||0,open:parseFloat(it.f17)||0,close:parseFloat(it.f18)||0}})});
+    fail=0;document.getElementById('dot').classList.remove('off');render();
+  }catch(e){fail++;if(fail>=3)document.getElementById('dot').classList.add('off')}
+}
+
+function interval(){
+  var n=new Date(),d=n.getDay(),h=n.getHours(),m=n.getMinutes();
+  if(d===0||d===6)return 300000;
+  var td=d>=1&&d<=5&&((h===9&&m>=30)||h===10||h===11||(h===11&&m<=30)||h===13||h===14||(h===15&&m===0));
+  return td?30000:60000;
+}
+function tick(){
+  var n=new Date();document.getElementById('clock').textContent=n.toTimeString().slice(0,8);
+  var d=n.getDay(),h=n.getHours(),m=n.getMinutes();
+  var td=d>=1&&d<=5&&((h===9&&m>=30)||h===10||h===11||(h===11&&m<=30)||h===13||h===14||(h===15&&m===0));
+  var c=document.getElementById('stateChip'),m2=document.getElementById('stMsg');
+  if(td){c.textContent='交易中';c.className='chip live';m2.textContent='刷新间隔30秒'}else{c.textContent='盘后';c.className='chip off';m2.textContent='刷新间隔60秒'}
+}
+function loop(){clearTimeout(tmr);fetchQuotes().then(function(){tmr=setTimeout(loop,interval())}).catch(function(){tmr=setTimeout(loop,60000)})}
+function toggleStrat(id){var b=document.getElementById('sbody_'+id),c=document.getElementById('scar_'+id);b.classList.toggle('open');c.classList.toggle('open')}
+function toggleCat(i){var b=document.getElementById('cat'+i),c=document.getElementById('car'+i);b.classList.toggle('open');c.classList.toggle('open')}
+function switchTab(t){tabMode=t;document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('on')});document.querySelector('.tab-btn[data-t="'+t+'"]').classList.add('on');render()}
+document.addEventListener('visibilitychange',function(){clearTimeout(tmr);if(!document.hidden){fetchQuotes();tmr=setTimeout(loop,interval())}else tmr=setTimeout(loop,300000)});
+function refresh(){var t=document.getElementById('toast');t.textContent='刷新中...';t.classList.add('show');fetchQuotes().then(function(){t.textContent='已刷新';setTimeout(function(){t.classList.remove('show')},1200)})}
+fetchQuotes().then(function(){render();tmr=setTimeout(loop,interval())});
+setInterval(tick,30000);tick();
+</script>
+</body>
+</html>
