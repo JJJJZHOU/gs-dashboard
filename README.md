@@ -1,1 +1,1 @@
-# ShowMeTheMoney-dashboard
+# gs-dashboard
