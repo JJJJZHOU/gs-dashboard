@@ -1,6 +1,0 @@
-*.py
-.claude/
-output/
-*.md
-!README.md
-temp_*
